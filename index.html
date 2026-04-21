@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群體投入狀態圖</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+
+    #page-wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 24px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    /* Header */
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    #header h2 { font-size: 17px; color: #333; }
+    #info-bar { display: flex; gap: 16px; font-size: 13px; color: #666; }
+    #info-bar span strong { color: #333; }
+
+
+    /* Group selector */
+    #group-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #group-bar label { font-size: 13px; color: #555; }
+    #group-select {
+      padding: 5px 10px;
+      font-size: 14px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* Chart overlay container */
+    .chart-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+      margin-bottom: 12px;
+      cursor: ew-resize;
+      user-select: none;
+    }
+    .chart-wrap img {
+      width: 100%;
+      display: block;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; /* canvas draws only; mouse handled by wrapper */
+    }
+
+    /* Summary image */
+    #img-summary {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    /* Time points display (like concept image) */
+    #timepoints-section {
+      margin-bottom: 16px;
+    }
+    .tp-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .tp-label {
+      width: 68px;
+      font-size: 13px;
+      color: #444;
+      flex-shrink: 0;
+    }
+    .tp-bar-wrap {
+      flex: 1;
+      height: 22px;
+      background: #e8e8e8;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .tp-bar {
+      height: 100%;
+      background: #4caf50;
+      border-radius: 4px;
+      transition: width 0.15s;
+    }
+    .tp-time {
+      width: 110px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: bold;
+      color: #333;
+      flex-shrink: 0;
+    }
+
+    /* Save */
+    #save-btn {
+      display: block;
+      width: 100%;
+      padding: 11px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    #save-btn:hover { background: #1558b0; }
+    #save-btn:disabled { background: #aaa; cursor: not-allowed; }
+    #status { margin-top: 8px; font-size: 13px; text-align: center; min-height: 18px; color: #555; }
+    #status.ok { color: #2e7d32; }
+    #status.err { color: #c62828; }
+
+    /* Instruction hint */
+    .hint { font-size: 12px; color: #888; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+<div id="page-wrapper">
+
+  <!-- Header -->
+  <div id="header">
+    <h2>群體投入狀態圖</h2>
+    <div id="info-bar">
+      <span>日期：<strong id="lbl-date">—</strong></span>
+      <span>組別：<strong id="lbl-group">—</strong></span>
+    </div>
+  </div>
+
+  <!-- Date + Group selector -->
+  <div id="group-bar">
+    <label>選擇日期：</label>
+    <select id="date-select" onchange="onDateChange()"></select>
+    <label style="margin-left:12px;">選擇組別：</label>
+    <select id="group-select" onchange="onGroupChange()"></select>
+  </div>
+
+  <!-- Group chart + overlay -->
+  <p class="hint">在圖上拖曳三條標記線以標記時間點（橘／藍／紅）</p>
+  <div class="chart-wrap" id="chart-wrap"
+       onmousedown="onDown(event)"
+       onmousemove="onMove(event)"
+       onmouseup="onUp()"
+       onmouseleave="onUp()"
+       ontouchstart="onDown(event,true)"
+       ontouchmove="onMove(event,true)"
+       ontouchend="onUp()">
+    <img id="img-group" src="" alt="組別圖" onload="redraw()">
+    <canvas id="overlay"></canvas>
+  </div>
+
+  <!-- Summary comparison (static) -->
+  <img id="img-summary" src="" alt="全組比較圖">
+
+  <!-- Time point values -->
+  <div id="timepoints-section">
+    <div class="tp-row">
+      <span class="tp-label">時間段 1</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar1" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-time" id="tv1">— ~ — min</span>
+    </div>
+    <div class="tp-row">
+      <span class="tp-label">時間段 2</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar2" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-time" id="tv2">— ~ — min</span>
+    </div>
+    <div class="tp-row">
+      <span class="tp-label">時間段 3</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar3" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-time" id="tv3">— ~ — min</span>
+    </div>
+  </div>
+
+  <button id="save-btn" onclick="handleSave()">儲存</button>
+  <div id="status"></div>
+
+</div>
+<script>
+// ── Config ───────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfr_r-28yIh5fxjoIdeSErM3xEzplyyBxwTfIdaTE3cA-SiAoKtFyOWO3upg5CQvW9YA/exec';
+const IMG_BASE  = 'images/';
+const TIME_MAX  = 125; // 分鐘
+
+// 圖中時間軸在整張圖的左右比例（依實際圖片調整）
+// 從左邊 Y 軸結束處 到 右邊結束處，以圖片寬度的比例表示
+const CHART_LEFT_RATIO  = 0.055;  // ~5.5%
+const CHART_RIGHT_RATIO = 0.987;  // ~98.7%
+
+// 三條標記線的顏色
+const LINE_COLORS = ['#e65100', '#1565c0', '#b71c1c'];
+const LINE_LABELS = ['T1', 'T2', 'T3'];
+
+// ★ 每次新增日期只要在這裡加一行 ★
+const DATE_GROUPS = {
+  '1119': ['group3', 'group6', 'all'],
+  '1203': ['group2', 'group3', 'all'],
+};
+// ────────────────────────────────────────────────────────────
+
+const params   = new URLSearchParams(window.location.search);
+const urlDate  = params.get('date') || '';
+const urlGroup = (params.get('group') || '').toLowerCase();
+
+const dateSel  = document.getElementById('date-select');
+const groupSel = document.getElementById('group-select');
+
+// 產生日期下拉
+const allDates = Object.keys(DATE_GROUPS);
+dateSel.innerHTML = allDates.map(d =>
+  `<option value="${d}">${d}</option>`
+).join('');
+dateSel.value = allDates.includes(urlDate) ? urlDate : allDates[0];
+
+function currentDate()  { return dateSel.value; }
+function currentGroup() { return groupSel.value; }
+
+function updateGroupOptions() {
+  const groups = DATE_GROUPS[currentDate()] || ['all'];
+  groupSel.innerHTML = groups.map(g =>
+    `<option value="${g}">${g.toUpperCase()}</option>`
+  ).join('');
+  groupSel.value = groups.includes(urlGroup) ? urlGroup : groups[0];
+  document.getElementById('lbl-group').textContent = currentGroup().toUpperCase();
+}
+
+function updateHeader() {
+  document.getElementById('lbl-date').textContent  = currentDate();
+  document.getElementById('lbl-group').textContent = currentGroup().toUpperCase();
+}
+
+function loadImages() {
+  document.getElementById('img-group').src   = `${IMG_BASE}${currentDate()}_${currentGroup()}.png`;
+  document.getElementById('img-summary').src = `${IMG_BASE}${currentDate()}_summary_comparison.png`;
+}
+
+function onDateChange() {
+  updateGroupOptions();
+  updateHeader();
+  loadImages();
+}
+
+function onGroupChange() {
+  updateHeader();
+  loadImages();
+}
+
+// 初始化
+updateGroupOptions();
+updateHeader();
+loadImages();
+
+// ── Canvas overlay ───────────────────────────────────────────
+const canvas = document.getElementById('overlay');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('chart-wrap');
+
+// 每個時間段有 start 和 end，預設三段平均分布
+let segments = [
+  [0.12, 0.28],
+  [0.40, 0.56],
+  [0.68, 0.84]
+];
+// dragging: { seg: i, handle: 'start'|'end'|'move', anchorR, anchorX }
+let dragging = null;
+
+const SEGMENT_ALPHA = 0.25; // 區塊透明度
+
+function ratioToMinutes(r) {
+  return Math.round(r * TIME_MAX);
+}
+
+function xToRatio(clientX) {
+  const rect = wrap.getBoundingClientRect();
+  const chartLeft  = rect.width * CHART_LEFT_RATIO;
+  const chartRight = rect.width * CHART_RIGHT_RATIO;
+  return Math.max(0, Math.min(1,
+    (clientX - rect.left - chartLeft) / (chartRight - chartLeft)
+  ));
+}
+
+function ratioToX(r) {
+  const rect = wrap.getBoundingClientRect();
+  const chartLeft  = rect.width * CHART_LEFT_RATIO;
+  const chartRight = rect.width * CHART_RIGHT_RATIO;
+  return chartLeft + r * (chartRight - chartLeft);
+}
+
+// 找最近的控制點（start 或 end 邊緣）或整段拖曳
+function findHandle(clientX) {
+  const rect = wrap.getBoundingClientRect();
+  const relX = clientX - rect.left;
+  const chartLeft  = rect.width * CHART_LEFT_RATIO;
+  const chartRight = rect.width * CHART_RIGHT_RATIO;
+  const threshold  = 14;
+
+  let best = null, bestDist = Infinity;
+  segments.forEach(([s, e], i) => {
+    const sx = chartLeft + s * (chartRight - chartLeft);
+    const ex = chartLeft + e * (chartRight - chartLeft);
+    const ds = Math.abs(relX - sx);
+    const de = Math.abs(relX - ex);
+    if (ds < threshold && ds < bestDist) { best = { seg: i, handle: 'start' }; bestDist = ds; }
+    if (de < threshold && de < bestDist) { best = { seg: i, handle: 'end'   }; bestDist = de; }
+    // 整段拖曳（在區塊內部）
+    if (relX > sx + threshold && relX < ex - threshold && bestDist > threshold) {
+      const dm = Math.min(ds, de) + 1;
+      if (dm < bestDist) { best = { seg: i, handle: 'move', anchorR: xToRatio(clientX), anchorS: s, anchorE: e }; bestDist = dm; }
+    }
+  });
+  return best;
+}
+
+function redraw() {
+  const img = document.getElementById('img-group');
+  canvas.width  = img.offsetWidth;
+  canvas.height = img.offsetHeight;
+
+  const chartLeft  = canvas.width * CHART_LEFT_RATIO;
+  const chartRight = canvas.width * CHART_RIGHT_RATIO;
+  const top    = canvas.height * 0.06;
+  const bottom = canvas.height * 0.82;
+
+  segments.forEach(([s, e], i) => {
+    const x1 = chartLeft + s * (chartRight - chartLeft);
+    const x2 = chartLeft + e * (chartRight - chartLeft);
+    const w  = x2 - x1;
+    const color = LINE_COLORS[i];
+
+    ctx.save();
+
+    // 半透明填色區塊
+    ctx.globalAlpha = SEGMENT_ALPHA;
+    ctx.fillStyle   = color;
+    ctx.fillRect(x1, top, w, bottom - top);
+    ctx.globalAlpha = 1;
+
+    // 左邊界線
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2.5;
+    ctx.setLineDash([6, 3]);
+    ctx.beginPath(); ctx.moveTo(x1, top); ctx.lineTo(x1, bottom); ctx.stroke();
+
+    // 右邊界線
+    ctx.beginPath(); ctx.moveTo(x2, top); ctx.lineTo(x2, bottom); ctx.stroke();
+
+    // 標籤泡泡（置中）
+    const midX = (x1 + x2) / 2;
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.fillRect(midX - 16, top - 20, 32, 18);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(LINE_LABELS[i], midX, top - 6);
+
+    ctx.restore();
+  });
+
+  updateDisplay();
+}
+
+function updateDisplay() {
+  segments.forEach(([s, e], i) => {
+    const sm = ratioToMinutes(s);
+    const em = ratioToMinutes(e);
+    const pct = e - s;
+    document.getElementById(`tv${i+1}`).textContent = `${sm} ~ ${em} min`;
+    document.getElementById(`bar${i+1}`).style.marginLeft = `${s * 100}%`;
+    document.getElementById(`bar${i+1}`).style.width      = `${pct * 100}%`;
+  });
+}
+
+function getClientX(e, touch) {
+  return touch ? e.touches[0].clientX : e.clientX;
+}
+
+function onDown(e, touch = false) {
+  const cx = getClientX(e, touch);
+  dragging = findHandle(cx);
+  if (dragging && touch) e.preventDefault();
+}
+
+function onMove(e, touch = false) {
+  if (!dragging) return;
+  if (touch) e.preventDefault();
+  const r = xToRatio(getClientX(e, touch));
+  const { seg, handle } = dragging;
+
+  if (handle === 'start') {
+    segments[seg][0] = Math.min(r, segments[seg][1] - 0.01);
+  } else if (handle === 'end') {
+    segments[seg][1] = Math.max(r, segments[seg][0] + 0.01);
+  } else if (handle === 'move') {
+    const dr = r - dragging.anchorR;
+    const w  = dragging.anchorE - dragging.anchorS;
+    let ns = dragging.anchorS + dr;
+    let ne = dragging.anchorE + dr;
+    if (ns < 0) { ns = 0; ne = w; }
+    if (ne > 1) { ne = 1; ns = 1 - w; }
+    segments[seg] = [ns, ne];
+  }
+  redraw();
+}
+
+function onUp() { dragging = null; }
+
+window.addEventListener('resize', redraw);
+document.getElementById('img-group').addEventListener('load', redraw);
+setTimeout(redraw, 300);
+
+// ── Save ─────────────────────────────────────────────────────
+async function handleSave() {
+  const btn    = document.getElementById('save-btn');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  status.className = '';
+  status.textContent = '截圖中，請稍候…';
+
+  try {
+    const c = await html2canvas(document.getElementById('page-wrapper'), {
+      useCORS: true, scale: 1.5
+    });
+    const screenshot = c.toDataURL('image/png').split(',')[1];
+
+    const payload = {
+      date: currentDate(), group: currentGroup(),
+      timepoints: segments.map(([s, e]) => ({
+        start: ratioToMinutes(s), end: ratioToMinutes(e)
+      })),
+      screenshot,
+      timestamp: new Date().toISOString()
+    };
+
+    status.textContent = '上傳中…';
+    const res  = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const text = await res.text();
+
+    if (text === 'OK') {
+      status.className = 'ok';
+      status.textContent = '儲存成功！';
+    } else {
+      throw new Error(text);
+    }
+  } catch (err) {
+    status.className = 'err';
+    status.textContent = `儲存失敗：${err.message}`;
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
