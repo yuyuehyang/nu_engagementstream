@@ -79,10 +79,14 @@ summary { cursor: pointer; font-size: 13px; color: #555; padding: 4px 0; }
 #img-summary { width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 6px; }
 
 #q-intro {
-  background: #e8f0fe; padding: 10px 12px;
+  background: #e8f0fe; padding: 14px 18px;
   border-radius: 6px; margin-bottom: 12px;
-  font-size: 12px; color: #555; line-height: 1.6;
+  font-size: 14px; color: #333; line-height: 1.7;
 }
+#q-intro h4 { font-size: 16px; color: #1a73e8; margin: 10px 0 6px; font-weight: bold; }
+#q-intro h4:first-child { margin-top: 0; }
+#q-intro ul { padding-left: 22px; margin-bottom: 4px; }
+#q-intro ul li { margin-bottom: 4px; }
 #q-nav {
   position: sticky; top: 0; background: #fff; z-index: 2;
   padding: 6px 0; margin-bottom: 12px;
@@ -105,18 +109,18 @@ summary { cursor: pointer; font-size: 13px; color: #555; padding: 4px 0; }
 .q-section .sec-hint { font-size: 12px; color: #888; margin-bottom: 10px; padding: 0 4px; }
 
 .q {
-  margin-bottom: 12px; padding: 10px 12px;
+  margin-bottom: 18px; padding: 16px 14px;
   background: #fafafa; border-radius: 6px;
   border-left: 3px solid #e0e0e0;
 }
 .q.required { border-left-color: #ffa726; }
 .q.missing { background: #ffebee; border-left-color: #c62828; }
-.q-title { font-size: 18px; font-weight: 500; margin-bottom: 10px; color: #222; line-height: 1.5; }
+.q-title { font-size: 18px; font-weight: 500; margin-bottom: 16px; color: #222; line-height: 1.5; }
 .q-title .req { color: #c62828; margin-left: 4px; }
 .q-hint { font-size: 11px; color: #888; margin: -2px 0 4px; }
 
-.opts { display: flex; flex-direction: column; gap: 4px; }
-.opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+.opts { display: flex; flex-direction: column; gap: 12px; }
+.opts label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; line-height: 1.6; }
 .opts label input { cursor: pointer; flex-shrink: 0; }
 .opt-other { display: flex; align-items: center; gap: 6px; }
 .opt-other input[type="text"] {
@@ -253,10 +257,22 @@ textarea { resize: vertical; min-height: 50px; }
 <div id="right-col">
 
 <div id="q-intro">
-  <strong>實驗週投入狀態回饋反思問卷</strong>｜搭配左側圖表填答（每次約 10–15 分鐘）<br>
-  ● 標 <span style="color:#c62828">*</span> 為必填；其他題目可視情況跳過。<br>
-  ● 量表採 1–5 分（1=非常不同意／非常不符合；5=非常同意／非常符合）。<br>
-  ● 填答內容會自動保存草稿於本機瀏覽器，關閉後可繼續。
+  <h4>使用說明</h4>
+  <ul>
+    <li>本問卷用於實驗週：當您收到本週的群體投入狀態圖（含活動段落標註、關鍵時間點與讀圖提示）後，請依圖表內容填答。</li>
+    <li>建議在收到回饋後 24–48 小時內完成；若可行，請先回看至少 1 段對應授課內容錄影（教師建議回看 2–3 段高峰／低谷片段）。</li>
+    <li>填答完全自願；您可跳過任何不想回答的題目，或隨時停止填寫。</li>
+    <li>為保護隱私，本問卷不要求填寫姓名、學號等可辨識個人身分資訊；請勿在開放題描述可直接辨識他人的資訊。</li>
+    <li>若研究提供 200 元等值禮券作為參與回饋：請另填「聯絡資訊表」（與本問卷分開保存），以利後續發放。</li>
+  </ul>
+  <h4>量表說明：除非另有說明，採 1–5 分量表。</h4>
+  <ul>
+    <li>1 = 非常不同意／非常不符合</li>
+    <li>2 = 不同意／不符合</li>
+    <li>3 = 普通／不確定</li>
+    <li>4 = 同意／符合</li>
+    <li>5 = 非常同意／非常符合</li>
+  </ul>
 </div>
 
 <div id="q-nav">
