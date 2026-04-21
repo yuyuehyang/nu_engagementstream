@@ -1,148 +1,203 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>群體投入狀態圖</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>群體投入狀態圖｜反思問卷</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif; background: #f0f0f0; color: #333; font-size: 14px; line-height: 1.5; }
 
-    #page-wrapper {
-      max-width: 1100px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px 24px 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-    }
+#layout {
+  display: flex; gap: 20px;
+  max-width: 1700px; margin: 0 auto;
+  padding: 16px;
+  align-items: flex-start;
+}
+#left-col {
+  flex: 0 0 46%;
+  position: sticky; top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: #fff; border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+#right-col {
+  flex: 1; min-width: 0;
+  background: #fff; border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+@media (max-width: 1000px) {
+  #layout { flex-direction: column; }
+  #left-col { position: static; flex: none; max-height: none; width: 100%; }
+}
 
-    /* Header */
-    #header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e0e0e0;
-    }
-    #header h2 { font-size: 17px; color: #333; }
-    #info-bar { display: flex; gap: 16px; font-size: 13px; color: #666; }
-    #info-bar span strong { color: #333; }
+#header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+#header h2 { font-size: 16px; color: #222; }
+#info-bar { display: flex; gap: 12px; font-size: 13px; color: #666; }
+#info-bar span strong { color: #333; }
 
+#group-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; flex-wrap: wrap;
+}
+#group-bar label { font-size: 13px; color: #555; }
+#group-bar select {
+  padding: 5px 10px; font-size: 13px;
+  border: 1px solid #bbb; border-radius: 4px;
+  background: #fff; cursor: pointer;
+}
 
-    /* Group selector */
-    #group-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    #group-bar label { font-size: 13px; color: #555; }
-    #group-select {
-      padding: 5px 10px;
-      font-size: 14px;
-      border: 1px solid #bbb;
-      border-radius: 4px;
-      background: #fff;
-      cursor: pointer;
-    }
+.chart-wrap {
+  position: relative; display: block;
+  width: 100%; margin-bottom: 10px;
+  cursor: ew-resize; user-select: none;
+}
+.chart-wrap img { width: 100%; display: block; border: 1px solid #ddd; border-radius: 4px; }
+#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 
-    /* Chart overlay container */
-    .chart-wrap {
-      position: relative;
-      display: block;
-      width: 100%;
-      margin-bottom: 12px;
-      cursor: ew-resize;
-      user-select: none;
-    }
-    .chart-wrap img {
-      width: 100%;
-      display: block;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    #overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none; /* canvas draws only; mouse handled by wrapper */
-    }
+#timepoints-section { margin-bottom: 10px; }
+.tp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tp-label { width: 40px; font-size: 12px; flex-shrink: 0; font-weight: bold; text-align: center; }
+.tp-bar-wrap { flex: 1; height: 20px; background: #e8e8e8; border-radius: 4px; overflow: hidden; position: relative; }
+.tp-bar { height: 100%; border-radius: 4px; transition: width 0.15s; }
+#bar1 { background: #e65100; }
+#bar2 { background: #1565c0; }
+#bar3 { background: #b71c1c; }
+.tp-time { width: 105px; text-align: right; font-size: 12px; font-weight: bold; color: #333; flex-shrink: 0; font-family: monospace; }
 
-    /* Summary image */
-    #img-summary {
-      width: 100%;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-bottom: 16px;
-    }
+.hint { font-size: 12px; color: #888; margin-bottom: 6px; }
+details { margin-top: 8px; }
+summary { cursor: pointer; font-size: 13px; color: #555; padding: 4px 0; }
+#img-summary { width: 100%; border: 1px solid #ddd; border-radius: 4px; margin-top: 6px; }
 
-    /* Time points display (like concept image) */
-    #timepoints-section {
-      margin-bottom: 16px;
-    }
-    .tp-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .tp-label {
-      width: 68px;
-      font-size: 13px;
-      color: #444;
-      flex-shrink: 0;
-    }
-    .tp-bar-wrap {
-      flex: 1;
-      height: 22px;
-      background: #e8e8e8;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .tp-bar {
-      height: 100%;
-      background: #4caf50;
-      border-radius: 4px;
-      transition: width 0.15s;
-    }
-    .tp-time {
-      width: 110px;
-      text-align: right;
-      font-size: 13px;
-      font-weight: bold;
-      color: #333;
-      flex-shrink: 0;
-    }
+#q-intro {
+  background: #e8f0fe; padding: 10px 12px;
+  border-radius: 6px; margin-bottom: 12px;
+  font-size: 12px; color: #555; line-height: 1.6;
+}
+#q-nav {
+  position: sticky; top: 0; background: #fff; z-index: 2;
+  padding: 6px 0; margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+#q-nav a {
+  padding: 4px 12px; font-size: 12px;
+  background: #eef; color: #333; border-radius: 4px;
+  text-decoration: none; font-weight: bold;
+}
+#q-nav a:hover { background: #dde; }
 
-    /* Save */
-    #save-btn {
-      display: block;
-      width: 100%;
-      padding: 11px;
-      background: #1a73e8;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-    #save-btn:hover { background: #1558b0; }
-    #save-btn:disabled { background: #aaa; cursor: not-allowed; }
-    #status { margin-top: 8px; font-size: 13px; text-align: center; min-height: 18px; color: #555; }
-    #status.ok { color: #2e7d32; }
-    #status.err { color: #c62828; }
+.q-section { margin-bottom: 24px; scroll-margin-top: 50px; }
+.q-section h3 {
+  font-size: 15px; color: #1a73e8;
+  padding: 6px 8px; margin-bottom: 12px;
+  background: #e8f0fe; border-radius: 4px;
+}
+.q-section .sec-hint { font-size: 12px; color: #888; margin-bottom: 10px; padding: 0 4px; }
 
-    /* Instruction hint */
-    .hint { font-size: 12px; color: #888; margin-bottom: 6px; }
-  </style>
+.q {
+  margin-bottom: 12px; padding: 10px 12px;
+  background: #fafafa; border-radius: 6px;
+  border-left: 3px solid #e0e0e0;
+}
+.q.required { border-left-color: #ffa726; }
+.q.missing { background: #ffebee; border-left-color: #c62828; }
+.q-title { font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #222; }
+.q-title .req { color: #c62828; margin-left: 4px; }
+.q-hint { font-size: 11px; color: #888; margin: -2px 0 4px; }
+
+.opts { display: flex; flex-direction: column; gap: 4px; }
+.opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+.opts label input { cursor: pointer; flex-shrink: 0; }
+.opt-other { display: flex; align-items: center; gap: 6px; }
+.opt-other input[type="text"] {
+  flex: 1; padding: 3px 6px; font-size: 13px;
+  border: 1px solid #bbb; border-radius: 3px;
+}
+
+.scale-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; justify-content: space-between;
+}
+.scale-min, .scale-max { color: #666; font-size: 11px; flex-shrink: 0; }
+.scale-options { display: flex; gap: 12px; }
+.scale-options label {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px; cursor: pointer; font-size: 12px;
+}
+
+input[type="text"], textarea, select {
+  width: 100%; padding: 6px 8px; font-size: 13px;
+  border: 1px solid #bbb; border-radius: 4px;
+  font-family: inherit;
+}
+input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-color: #1a73e8; }
+textarea { resize: vertical; min-height: 50px; }
+
+.tp-subq {
+  padding: 10px; margin-bottom: 10px;
+  background: #fff; border-radius: 4px;
+  border: 1px solid #ddd;
+}
+.tp-subq-head { font-size: 13px; margin-bottom: 8px; }
+.tp-tag {
+  display: inline-block;
+  padding: 1px 8px; border-radius: 3px;
+  color: #fff; font-size: 12px; margin-right: 6px; font-weight: bold;
+}
+.tag-T1 { background: #e65100; }
+.tag-T2 { background: #1565c0; }
+.tag-T3 { background: #b71c1c; }
+.tp-subq-time {
+  font-size: 12px; color: #666; font-family: monospace; margin-left: 4px;
+}
+.sub-label { font-size: 12px; color: #555; margin: 6px 0 4px; font-weight: 500; }
+
+.role-block { display: none; padding: 6px 8px; margin: 8px 0; border-radius: 4px; }
+.role-block.active { display: block; }
+#d-teacher-block { background: #fff8e1; border: 1px dashed #ff9800; }
+#d-student-block { background: #e8f5e9; border: 1px dashed #43a047; }
+.role-header { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+#d-teacher-block .role-header { color: #e65100; }
+#d-student-block .role-header { color: #2e7d32; }
+
+#role-prompt { font-size: 13px; color: #888; padding: 10px; text-align: center; background: #f5f5f5; border-radius: 4px; }
+
+#save-bar { margin-top: 20px; }
+#save-btn {
+  display: block; width: 100%; padding: 12px;
+  background: #1a73e8; color: #fff; border: none;
+  border-radius: 6px; font-size: 15px; cursor: pointer;
+  font-weight: 500;
+}
+#save-btn:hover { background: #1558b0; }
+#save-btn:disabled { background: #aaa; cursor: not-allowed; }
+#status {
+  margin-top: 10px; font-size: 13px; text-align: center;
+  min-height: 18px; color: #555; padding: 8px;
+  border-radius: 4px;
+}
+#status.ok { color: #2e7d32; background: #e8f5e9; }
+#status.err { color: #c62828; background: #ffebee; }
+#status.warn { color: #ef6c00; background: #fff3e0; }
+
+.autosave-hint { font-size: 11px; color: #999; text-align: right; margin: 4px 0 -4px; }
+</style>
 </head>
 <body>
-<div id="page-wrapper">
+<div id="layout">
 
-  <!-- Header -->
+<!-- ============ LEFT COLUMN ============ -->
+<div id="left-col">
   <div id="header">
     <h2>群體投入狀態圖</h2>
     <div id="info-bar">
@@ -151,70 +206,459 @@
     </div>
   </div>
 
-  <!-- Date + Group selector -->
   <div id="group-bar">
-    <label>選擇日期：</label>
+    <label>日期：</label>
     <select id="date-select" onchange="onDateChange()"></select>
-    <label style="margin-left:12px;">選擇組別：</label>
+    <label>組別：</label>
     <select id="group-select" onchange="onGroupChange()"></select>
   </div>
 
-  <!-- Group chart + overlay -->
-  <p class="hint">在圖上拖曳三條標記線以標記時間點（橘／藍／紅）</p>
+  <p class="hint">拖曳三段 T1（橘）／T2（藍）／T3（紅）標記時間點；C2 題組會自動帶入分鐘數</p>
   <div class="chart-wrap" id="chart-wrap"
-       onmousedown="onDown(event)"
-       onmousemove="onMove(event)"
-       onmouseup="onUp()"
-       onmouseleave="onUp()"
-       ontouchstart="onDown(event,true)"
-       ontouchmove="onMove(event,true)"
-       ontouchend="onUp()">
+    onmousedown="onDown(event)"
+    onmousemove="onMove(event)"
+    onmouseup="onUp()"
+    onmouseleave="onUp()"
+    ontouchstart="onDown(event,true)"
+    ontouchmove="onMove(event,true)"
+    ontouchend="onUp()">
     <img id="img-group" src="" alt="組別圖" onload="redraw()">
     <canvas id="overlay"></canvas>
   </div>
 
-  <!-- Summary comparison (static) -->
-  <img id="img-summary" src="" alt="全組比較圖">
-
-  <!-- Time point values -->
   <div id="timepoints-section">
     <div class="tp-row">
-      <span class="tp-label">時間段 1</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar1" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-label" style="color:#e65100">T1</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar1"></div></div>
       <span class="tp-time" id="tv1">— ~ — min</span>
     </div>
     <div class="tp-row">
-      <span class="tp-label">時間段 2</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar2" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-label" style="color:#1565c0">T2</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar2"></div></div>
       <span class="tp-time" id="tv2">— ~ — min</span>
     </div>
     <div class="tp-row">
-      <span class="tp-label">時間段 3</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar3" style="width:0%;margin-left:0%"></div></div>
+      <span class="tp-label" style="color:#b71c1c">T3</span>
+      <div class="tp-bar-wrap"><div class="tp-bar" id="bar3"></div></div>
       <span class="tp-time" id="tv3">— ~ — min</span>
     </div>
   </div>
 
-  <button id="save-btn" onclick="handleSave()">儲存</button>
+  <details>
+    <summary>顯示全組比較圖</summary>
+    <img id="img-summary" src="" alt="全組比較圖">
+  </details>
+</div>
+
+<!-- ============ RIGHT COLUMN ============ -->
+<div id="right-col">
+
+<div id="q-intro">
+  <strong>實驗週投入狀態回饋反思問卷</strong>｜搭配左側圖表填答（每次約 10–15 分鐘）<br>
+  ● 標 <span style="color:#c62828">*</span> 為必填；其他題目可視情況跳過。<br>
+  ● 量表採 1–5 分（1=非常不同意／非常不符合；5=非常同意／非常符合）。<br>
+  ● 填答內容會自動保存草稿於本機瀏覽器，關閉後可繼續。
+</div>
+
+<div id="q-nav">
+  <a href="#sec-A">A 基本</a>
+  <a href="#sec-B">B 理解</a>
+  <a href="#sec-C">C 觀察</a>
+  <a href="#sec-D">D 行動</a>
+  <a href="#sec-E">E 效益</a>
+  <a href="#sec-F">F 介面</a>
+  <a href="#sec-G">G 其他</a>
+</div>
+
+<!-- ============== A ============== -->
+<section class="q-section" id="sec-A">
+  <h3>A. 基本資訊與回饋使用情形</h3>
+
+  <div class="q" data-id="A1">
+    <div class="q-title">A1. 研究代碼（例如 S012／T01；不知道可先留空）</div>
+    <input type="text" data-field="A1">
+  </div>
+
+  <div class="q required" data-id="A2" data-required="radio">
+    <div class="q-title">A2. 您的身分為（單選）<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="radio" name="A2" value="學生" onchange="onRoleChange()">學生</label>
+      <label><input type="radio" name="A2" value="授課教師" onchange="onRoleChange()">授課教師</label>
+    </div>
+  </div>
+
+  <div class="q required" data-id="A3" data-required="radio">
+    <div class="q-title">A3. 您所屬課程為（單選）<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="radio" name="A3" value="神經與行為模型建構">神經與行為模型建構</label>
+      <label><input type="radio" name="A3" value="工程數學">工程數學</label>
+      <label><input type="radio" name="A3" value="應用力學">應用力學</label>
+      <label><input type="radio" name="A3" value="地球急轉彎">地球急轉彎</label>
+      <label class="opt-other">
+        <input type="radio" name="A3" value="其他">其他：
+        <input type="text" data-field="A3_other" placeholder="請填寫">
+      </label>
+    </div>
+  </div>
+
+  <div class="q required" data-id="A4" data-required="radio">
+    <div class="q-title">A4. 本次為您第幾次收到投入狀態回饋？<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="radio" name="A4" value="第1次">第 1 次</label>
+      <label><input type="radio" name="A4" value="第2次">第 2 次</label>
+      <label><input type="radio" name="A4" value="第3次">第 3 次</label>
+      <label><input type="radio" name="A4" value="第4次">第 4 次</label>
+      <label><input type="radio" name="A4" value="第5次以上">第 5 次以上</label>
+    </div>
+  </div>
+
+  <div class="q required" data-id="A5" data-required="radio">
+    <div class="q-title">A5. 您收到圖表後的閱讀狀況為<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="radio" name="A5" value="已完整看過">已完整看過</label>
+      <label><input type="radio" name="A5" value="只看了一部分">只看了一部分</label>
+      <label><input type="radio" name="A5" value="尚未閱讀">尚未閱讀（建議先閱讀後再填答）</label>
+    </div>
+  </div>
+
+  <div class="q" data-id="A6">
+    <div class="q-title">A6. 您本次主要做了哪些事？（可複選）</div>
+    <div class="opts">
+      <label><input type="checkbox" name="A6" value="只看圖表">只看圖表</label>
+      <label><input type="checkbox" name="A6" value="看圖表+讀圖提示">看圖表＋讀圖提示</label>
+      <label><input type="checkbox" name="A6" value="查看關鍵時間點">查看關鍵時間點</label>
+      <label><input type="checkbox" name="A6" value="回看授課錄影">回看授課錄影（點到時間點回看）</label>
+      <label><input type="checkbox" name="A6" value="與他人討論">與他人討論（同組／助教／教師等）</label>
+    </div>
+  </div>
+
+  <div class="q" data-id="A7">
+    <div class="q-title">A7. 您估計本次花在「看圖＋回看授課錄影」的總時間</div>
+    <div class="opts">
+      <label><input type="radio" name="A7" value="0-2分鐘">0-2 分鐘</label>
+      <label><input type="radio" name="A7" value="3-5分鐘">3-5 分鐘</label>
+      <label><input type="radio" name="A7" value="6-10分鐘">6-10 分鐘</label>
+      <label><input type="radio" name="A7" value="11-20分鐘">11-20 分鐘</label>
+      <label><input type="radio" name="A7" value="20分鐘以上">20 分鐘以上</label>
+    </div>
+  </div>
+
+  <div class="q" data-id="A8">
+    <div class="q-title">A8.（選填）若您回看錄影，主要回看的段落／時間點是哪些？（1-3 個，例如 00:12:30）</div>
+    <textarea data-field="A8" rows="2"></textarea>
+  </div>
+</section>
+
+<!-- ============== B ============== -->
+<section class="q-section" id="sec-B">
+  <h3>B. 對回饋圖表的理解、信任與使用感受</h3>
+  <p class="sec-hint">1-5 分量表：1 = 非常不同意／不符合；5 = 非常同意／符合</p>
+  <div id="sec-B-items"></div>
+</section>
+
+<!-- ============== C ============== -->
+<section class="q-section" id="sec-C">
+  <h3>C. 看見了什麼：您從圖表中注意到的重點</h3>
+
+  <div class="q required" data-id="C1" data-required="checkbox">
+    <div class="q-title">C1. 請勾選您本週最明顯看到的情況（可複選）<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="checkbox" name="C1" value="全班在某些段落出現明顯的投入低谷">全班在某些段落出現明顯的投入低谷</label>
+      <label><input type="checkbox" name="C1" value="全班在某些段落出現明顯的投入高峰">全班在某些段落出現明顯的投入高峰</label>
+      <label><input type="checkbox" name="C1" value="不同組別之間差異很大">不同組別之間差異很大（某些組特別低或特別高）</label>
+      <label><input type="checkbox" name="C1" value="在活動轉場時出現投入下滑">在活動轉場時出現投入下滑（例如從講解切到討論／從討論回收到全班）</label>
+      <label><input type="checkbox" name="C1" value="某些段落投入很平均、穩定">某些段落投入很平均、穩定</label>
+      <label><input type="checkbox" name="C1" value="我看不太出明顯差異">我看不太出明顯差異／我不確定如何解讀</label>
+      <label class="opt-other">
+        <input type="checkbox" name="C1" value="其他">其他：
+        <input type="text" data-field="C1_other">
+      </label>
+    </div>
+  </div>
+
+  <div class="q" data-id="C2">
+    <div class="q-title">C2. 請針對 T1／T2／T3 三個段落分別說明（時間由左側拖曳決定）</div>
+    <p class="q-hint">選出 1-3 個您覺得「最值得關注」的段落／時間點，並簡述您看到的現象</p>
+
+    <div class="tp-subq">
+      <div class="tp-subq-head"><span class="tp-tag tag-T1">T1</span>段落／時間點 1<span class="tp-subq-time" id="c2-t1-time">— ~ — min</span></div>
+      <div class="sub-label">類型：</div>
+      <div class="opts">
+        <label><input type="radio" name="C2_1_type" value="高峰">高峰</label>
+        <label><input type="radio" name="C2_1_type" value="低谷">低谷</label>
+        <label><input type="radio" name="C2_1_type" value="組間差異">組間差異</label>
+        <label><input type="radio" name="C2_1_type" value="轉場">轉場</label>
+        <label class="opt-other"><input type="radio" name="C2_1_type" value="其他">其他：<input type="text" data-field="C2_1_type_other"></label>
+      </div>
+      <div class="sub-label">現象描述（1-2 句）：</div>
+      <textarea data-field="C2_1_desc" rows="2"></textarea>
+    </div>
+
+    <div class="tp-subq">
+      <div class="tp-subq-head"><span class="tp-tag tag-T2">T2</span>段落／時間點 2<span class="tp-subq-time" id="c2-t2-time">— ~ — min</span></div>
+      <div class="sub-label">類型：</div>
+      <div class="opts">
+        <label><input type="radio" name="C2_2_type" value="高峰">高峰</label>
+        <label><input type="radio" name="C2_2_type" value="低谷">低谷</label>
+        <label><input type="radio" name="C2_2_type" value="組間差異">組間差異</label>
+        <label><input type="radio" name="C2_2_type" value="轉場">轉場</label>
+        <label class="opt-other"><input type="radio" name="C2_2_type" value="其他">其他：<input type="text" data-field="C2_2_type_other"></label>
+      </div>
+      <div class="sub-label">現象描述（1-2 句）：</div>
+      <textarea data-field="C2_2_desc" rows="2"></textarea>
+    </div>
+
+    <div class="tp-subq">
+      <div class="tp-subq-head"><span class="tp-tag tag-T3">T3</span>段落／時間點 3<span class="tp-subq-time" id="c2-t3-time">— ~ — min</span></div>
+      <div class="sub-label">類型：</div>
+      <div class="opts">
+        <label><input type="radio" name="C2_3_type" value="高峰">高峰</label>
+        <label><input type="radio" name="C2_3_type" value="低谷">低谷</label>
+        <label><input type="radio" name="C2_3_type" value="組間差異">組間差異</label>
+        <label><input type="radio" name="C2_3_type" value="轉場">轉場</label>
+        <label class="opt-other"><input type="radio" name="C2_3_type" value="其他">其他：<input type="text" data-field="C2_3_type_other"></label>
+      </div>
+      <div class="sub-label">現象描述（1-2 句）：</div>
+      <textarea data-field="C2_3_desc" rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="q" data-id="C3">
+    <div class="q-title">C3. 您認為上述現象可能的原因是什麼？（可複選；不確定可跳過）</div>
+    <div class="opts">
+      <label><input type="checkbox" name="C3" value="任務/題目難度">任務／題目難度（太高或太低）</label>
+      <label><input type="checkbox" name="C3" value="指令/目標或評量標準不清">指令、目標或評量標準不夠清楚</label>
+      <label><input type="checkbox" name="C3" value="時間分配不合適">時間分配不合適（某段太趕或太久）</label>
+      <label><input type="checkbox" name="C3" value="角色分工或責任結構不清">角色分工或責任結構不清楚（容易搭便車／一人主導）</label>
+      <label><input type="checkbox" name="C3" value="組內溝通不順">組內溝通不順（輪流發言、傾聽、追問、確認理解）</label>
+      <label><input type="checkbox" name="C3" value="組內共識回收不足">組內共識回收不足（討論結束缺乏共同結論）</label>
+      <label><input type="checkbox" name="C3" value="教師引導/介入方式">教師的引導／提問／巡視介入方式造成影響</label>
+      <label><input type="checkbox" name="C3" value="外在因素">外在因素（設備、環境、臨時事件）</label>
+      <label class="opt-other"><input type="checkbox" name="C3" value="其他">其他：<input type="text" data-field="C3_other"></label>
+    </div>
+  </div>
+
+  <div class="q" data-id="C4">
+    <div class="q-title">C4. 您最想「進一步回看／釐清」的是什麼？</div>
+    <p class="q-hint">例如：想回看哪一段？想確認什麼互動或講解方式？</p>
+    <textarea data-field="C4" rows="3"></textarea>
+  </div>
+</section>
+
+<!-- ============== D ============== -->
+<section class="q-section" id="sec-D">
+  <h3>D. 打算怎麼調：下一次課堂／討論的行動計畫</h3>
+
+  <div class="q required" data-id="D0" data-required="radio">
+    <div class="q-title">D0. 因為這份回饋，您是否打算做出任何調整？（單選）<span class="req">*</span></div>
+    <div class="opts">
+      <label><input type="radio" name="D0" value="會" onchange="onD0Change()">會</label>
+      <label><input type="radio" name="D0" value="不會" onchange="onD0Change()">不會</label>
+      <label><input type="radio" name="D0" value="還不確定" onchange="onD0Change()">還不確定</label>
+    </div>
+  </div>
+
+  <div class="q" data-id="D0_1" id="D0_1-block" style="display:none">
+    <div class="q-title">D0-1.（若選「不會」或「還不確定」）主要原因是什麼？（可複選）</div>
+    <div class="opts">
+      <label><input type="checkbox" name="D0_1" value="看不懂圖">看不懂圖</label>
+      <label><input type="checkbox" name="D0_1" value="覺得與實際不符">覺得與實際不符</label>
+      <label><input type="checkbox" name="D0_1" value="沒有時間/資源調整">沒有時間／資源調整</label>
+      <label><input type="checkbox" name="D0_1" value="不知道要怎麼調">不知道要怎麼調</label>
+      <label><input type="checkbox" name="D0_1" value="覺得不需要調">覺得不需要調</label>
+      <label class="opt-other"><input type="checkbox" name="D0_1" value="其他">其他：<input type="text" data-field="D0_1_other"></label>
+    </div>
+  </div>
+
+  <div id="role-prompt">請先於 A2 選擇身分，系統會顯示對應的 D-T（教師）或 D-S（學生）題組</div>
+
+  <!-- 教師 -->
+  <div id="d-teacher-block" class="role-block">
+    <div class="role-header">【D-T. 授課教師填答】</div>
+
+    <div class="q" data-id="DT1">
+      <div class="q-title">D-T1. 本週您是否依圖表回看 2-3 個高峰／低谷段落的錄影片段？</div>
+      <div class="opts">
+        <label><input type="radio" name="DT1" value="有">有</label>
+        <label><input type="radio" name="DT1" value="沒有">沒有</label>
+        <label><input type="radio" name="DT1" value="計畫稍後回看">計畫稍後回看</label>
+      </div>
+    </div>
+
+    <div class="q" data-id="DT2">
+      <div class="q-title">D-T2.（建議）教學調整紀錄：請至少填寫 1 項「下週可執行的微調策略」</div>
+      <div class="sub-label">(1) 本週觀察發現（我在圖表／錄影中看見…）：</div>
+      <textarea data-field="DT2_1" rows="2"></textarea>
+      <div class="sub-label">(2) 推測原因（我認為可能是因為…）：</div>
+      <textarea data-field="DT2_2" rows="2"></textarea>
+      <div class="sub-label">(3) 下週調整策略（我打算…；請寫具體做法）：</div>
+      <textarea data-field="DT2_3" rows="2"></textarea>
+      <div class="sub-label">(4) 預期驗證方式（下週我會觀察…；或看哪個段落是否改善）：</div>
+      <textarea data-field="DT2_4" rows="2"></textarea>
+    </div>
+
+    <div class="q" data-id="DT3">
+      <div class="q-title">D-T3. 下週您最可能採用哪些調整類型？（可複選；建議最多選 2 項）</div>
+      <div class="opts">
+        <label><input type="checkbox" name="DT3" value="11課後回看/反思流程">【11 課後回看／反思流程】針對低谷段落回看錄影、調整引導或提問</label>
+        <label><input type="checkbox" name="DT3" value="12分組責任與角色結構">【12 分組責任與角色結構】更明確設定角色輪替／增加階段性小產出</label>
+        <label><input type="checkbox" name="DT3" value="13活動節奏模板">【13 活動節奏模板】調整「啟動→發散→整合→產出→回收」的段落安排、時間分配與轉場／回收方式</label>
+        <label class="opt-other"><input type="checkbox" name="DT3" value="其他">其他：<input type="text" data-field="DT3_other"></label>
+      </div>
+    </div>
+
+    <div class="q" data-id="DT4">
+      <div class="q-title">D-T4. 您希望研究團隊或教學諮詢員提供哪些協助？（可複選）</div>
+      <div class="opts">
+        <label><input type="checkbox" name="DT4" value="協助解讀圖表">協助解讀圖表</label>
+        <label><input type="checkbox" name="DT4" value="協助定位錄影片段">協助定位錄影片段</label>
+        <label><input type="checkbox" name="DT4" value="提供活動節奏/題型模板">提供活動節奏／題型模板</label>
+        <label><input type="checkbox" name="DT4" value="提供角色卡/小組規範工具">提供角色卡／小組規範工具</label>
+        <label><input type="checkbox" name="DT4" value="協助整理反思紀錄">協助整理反思紀錄</label>
+        <label class="opt-other"><input type="checkbox" name="DT4" value="其他">其他：<input type="text" data-field="DT4_other"></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 學生 -->
+  <div id="d-student-block" class="role-block">
+    <div class="role-header">【D-S. 學生填答】</div>
+
+    <div class="q" data-id="DS1">
+      <div class="q-title">D-S1. 您是否願意在下一次分組活動前，用 3-5 分鐘與小組一起看這張圖並做「小組校準」？</div>
+      <div class="opts">
+        <label><input type="radio" name="DS1" value="願意">願意</label>
+        <label><input type="radio" name="DS1" value="可能願意">可能願意</label>
+        <label><input type="radio" name="DS1" value="不願意">不願意</label>
+      </div>
+    </div>
+
+    <div class="q" data-id="DS2">
+      <div class="q-title">D-S2.（若願意或可能願意）小組本週想設定的一項「行為目標」是：</div>
+      <div class="opts">
+        <label><input type="radio" name="DS2" value="輪流發言">輪流發言（每人至少一次）</label>
+        <label><input type="radio" name="DS2" value="邀請沉默者">邀請沉默者（主動詢問／點名）</label>
+        <label><input type="radio" name="DS2" value="確認理解">確認理解（用自己的話復述／請同伴確認）</label>
+        <label><input type="radio" name="DS2" value="回收共識">回收共識（每段討論後產出 1 句共識）</label>
+        <label><input type="radio" name="DS2" value="先各自思考再分享">先各自思考再分享（避免一人主導）</label>
+        <label><input type="radio" name="DS2" value="分工透明">分工透明（每人明確負責一小步，並在最後整合）</label>
+        <label class="opt-other"><input type="radio" name="DS2" value="其他">其他：<input type="text" data-field="DS2_other"></label>
+      </div>
+    </div>
+
+    <div class="q" data-id="DS3">
+      <div class="q-title">D-S3. 為達成上述目標，您覺得小組最需要做的 1-2 個具體行為是什麼？</div>
+      <textarea data-field="DS3" rows="3"></textarea>
+    </div>
+
+    <div class="q" data-id="DS4">
+      <div class="q-title">D-S4. 本週小組是否採用角色分工／輪替（如 Explainer / Checker / Strategist / Writer 或類似）？</div>
+      <div class="opts">
+        <label><input type="radio" name="DS4" value="有">有</label>
+        <label><input type="radio" name="DS4" value="沒有">沒有</label>
+        <label><input type="radio" name="DS4" value="不確定">不確定</label>
+      </div>
+    </div>
+
+    <div class="q" data-id="DS5">
+      <div class="q-title">D-S5.（選填）若有採用角色：</div>
+      <div class="sub-label">您本週主要角色是：</div>
+      <input type="text" data-field="DS5_role" placeholder="例如 Explainer">
+      <div class="sub-label">您覺得角色設定對討論的幫助程度（1-5 分）：</div>
+      <div class="scale-row">
+        <span class="scale-min">幫助很小</span>
+        <div class="scale-options">
+          <label><input type="radio" name="DS5_rating" value="1">1</label>
+          <label><input type="radio" name="DS5_rating" value="2">2</label>
+          <label><input type="radio" name="DS5_rating" value="3">3</label>
+          <label><input type="radio" name="DS5_rating" value="4">4</label>
+          <label><input type="radio" name="DS5_rating" value="5">5</label>
+        </div>
+        <span class="scale-max">幫助很大</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== E ============== -->
+<section class="q-section" id="sec-E">
+  <h3>E. 效益感受：看圖後對教學／學習的影響</h3>
+  <p class="sec-hint">1-5 分量表</p>
+  <div id="sec-E-items"></div>
+</section>
+
+<!-- ============== F ============== -->
+<section class="q-section" id="sec-F">
+  <h3>F. 介面呈現建議（提供後續迭代用）</h3>
+
+  <div class="q" data-id="F1">
+    <div class="q-title">F1. 請評分以下元素對您「理解與採用」的幫助程度（1-5 分；不適用可留空）</div>
+    <div id="sec-F1-items"></div>
+  </div>
+
+  <div class="q" data-id="F2">
+    <div class="q-title">F2. 下列哪幾項是您最希望「下次改得更好」的？（請選 3 項）</div>
+    <div class="opts">
+      <label><input type="checkbox" name="F2" value="圖形呈現方式">圖形呈現方式（參考線、狀態顯示方式、易讀性）</label>
+      <label><input type="checkbox" name="F2" value="段落切分與標註">段落切分與標註方式（更清楚或更貼近課堂活動）</label>
+      <label><input type="checkbox" name="F2" value="分組排序與標示">分組排序與分組標示（更容易找到自己的組／比較差異）</label>
+      <label><input type="checkbox" name="F2" value="關鍵片段時間點">關鍵片段時間點的選取與數量（太多／太少／更精準）</label>
+      <label><input type="checkbox" name="F2" value="與錄影回放連動">與錄影回放的連動方式（點選時間點即可跳到錄影該段）</label>
+      <label><input type="checkbox" name="F2" value="摘要指標/一句話重點">摘要指標／一句話重點（讓我更快抓到重點）</label>
+      <label><input type="checkbox" name="F2" value="匯出欄位與報告格式">匯出欄位與報告格式（讓我更好做反思或寫作）</label>
+      <label class="opt-other"><input type="checkbox" name="F2" value="其他">其他：<input type="text" data-field="F2_other"></label>
+    </div>
+  </div>
+
+  <div class="q" data-id="F3">
+    <div class="q-title">F3. 您覺得需要補充哪些資訊，才能讓您更有信心解讀這張圖？</div>
+    <p class="q-hint">例如：投入狀態定義、模型限制、如何讀圖等</p>
+    <textarea data-field="F3" rows="3"></textarea>
+  </div>
+
+  <div class="q" data-id="F4">
+    <div class="q-title">F4. 若只能新增 1 個功能／資訊，您最希望新增的是什麼？</div>
+    <textarea data-field="F4" rows="2"></textarea>
+  </div>
+</section>
+
+<!-- ============== G ============== -->
+<section class="q-section" id="sec-G">
+  <h3>G. 其他（選填）</h3>
+
+  <div class="q" data-id="G1">
+    <div class="q-title">G1. 若未來研究團隊招募介面使用者測試／訪談，您是否願意收到招募資訊？</div>
+    <div class="opts">
+      <label><input type="radio" name="G1" value="願意">願意</label>
+      <label><input type="radio" name="G1" value="不願意">不願意</label>
+    </div>
+  </div>
+
+  <div class="q" data-id="G2">
+    <div class="q-title">G2. 其他想補充的內容或建議：</div>
+    <textarea data-field="G2" rows="3"></textarea>
+  </div>
+</section>
+
+<div id="save-bar">
+  <div class="autosave-hint" id="autosave-hint">尚未儲存</div>
+  <button id="save-btn" onclick="handleSave()">儲存並送出</button>
   <div id="status"></div>
+</div>
 
 </div>
+</div>
+
 <script>
 // ── Config ───────────────────────────────────────────────────
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeG2q_6CEiVWBA7ZjacHSFGwleZSmufH8Z7sCv3n3PUXZ0ZuX3-QVm951Q6JsZxM0kQg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSiMxrcqZKuGNmEd1lVlq3OVlYNzuRzxrkWNc9SpFmhlOhbRaMVZcLxbAomSP6BKZKTg/exec';
 const IMG_BASE  = 'images/';
-const TIME_MAX  = 125; // 分鐘
-
-// 圖中時間軸在整張圖的左右比例（依實際圖片調整）
-// 從左邊 Y 軸結束處 到 右邊結束處，以圖片寬度的比例表示
-const CHART_LEFT_RATIO  = 0.055;  // ~5.5%
-const CHART_RIGHT_RATIO = 0.987;  // ~98.7%
-
-// 三條標記線的顏色
+const TIME_MAX  = 125;
+const CHART_LEFT_RATIO  = 0.055;
+const CHART_RIGHT_RATIO = 0.987;
 const LINE_COLORS = ['#e65100', '#1565c0', '#b71c1c'];
 const LINE_LABELS = ['T1', 'T2', 'T3'];
 
-// ★ 每次新增日期只要在這裡加一行 ★
 const DATE_GROUPS = {
   '1119': ['group3', 'group6', 'all'],
   '1203': ['group2', 'group3', 'all'],
@@ -224,15 +668,13 @@ const DATE_GROUPS = {
 const params   = new URLSearchParams(window.location.search);
 const urlDate  = params.get('date') || '';
 const urlGroup = (params.get('group') || '').toLowerCase();
+const urlCode  = params.get('code') || '';
 
 const dateSel  = document.getElementById('date-select');
 const groupSel = document.getElementById('group-select');
 
-// 產生日期下拉
 const allDates = Object.keys(DATE_GROUPS);
-dateSel.innerHTML = allDates.map(d =>
-  `<option value="${d}">${d}</option>`
-).join('');
+dateSel.innerHTML = allDates.map(d => `<option value="${d}">${d}</option>`).join('');
 dateSel.value = allDates.includes(urlDate) ? urlDate : allDates[0];
 
 function currentDate()  { return dateSel.value; }
@@ -240,83 +682,112 @@ function currentGroup() { return groupSel.value; }
 
 function updateGroupOptions() {
   const groups = DATE_GROUPS[currentDate()] || ['all'];
-  groupSel.innerHTML = groups.map(g =>
-    `<option value="${g}">${g.toUpperCase()}</option>`
-  ).join('');
+  groupSel.innerHTML = groups.map(g => `<option value="${g}">${g.toUpperCase()}</option>`).join('');
   groupSel.value = groups.includes(urlGroup) ? urlGroup : groups[0];
-  document.getElementById('lbl-group').textContent = currentGroup().toUpperCase();
 }
-
 function updateHeader() {
   document.getElementById('lbl-date').textContent  = currentDate();
   document.getElementById('lbl-group').textContent = currentGroup().toUpperCase();
 }
-
 function loadImages() {
   document.getElementById('img-group').src   = `${IMG_BASE}${currentDate()}_${currentGroup()}.png`;
   document.getElementById('img-summary').src = `${IMG_BASE}${currentDate()}_summary_comparison.png`;
 }
+function onDateChange() { updateGroupOptions(); updateHeader(); loadImages(); loadDraft(); }
+function onGroupChange() { updateHeader(); loadImages(); loadDraft(); }
 
-function onDateChange() {
-  updateGroupOptions();
-  updateHeader();
-  loadImages();
-}
-
-function onGroupChange() {
-  updateHeader();
-  loadImages();
-}
-
-// 初始化
 updateGroupOptions();
 updateHeader();
 loadImages();
+
+// ── 動態產生量表題 ───────────────────────────────────────────
+const B_Q = [
+  ['B1', '我能理解這張圖表想呈現的核心訊息（不同投入狀態在時間上的比例變化）'],
+  ['B2', '我能理解圖表中的「活動段落標註／轉場」代表什麼'],
+  ['B3', '我能快速找到投入的高峰、低谷或明顯變化的時間點', true],
+  ['B4', '我能理解「全班」與「分組」資訊在圖表上的呈現方式'],
+  ['B5', '這張圖表讓我看見一些我在課堂當下未必注意到的互動變化'],
+  ['B6', '整體而言，圖表反映的趨勢大致符合我對本週課堂狀況的印象'],
+  ['B7', '即使圖表有部分不符合我的印象，它仍提供了值得回看錄影或進一步查證的線索'],
+  ['B8', '我覺得這份回饋是「延遲、聚合」呈現的方式，讓我感到較安心（不像被即時監控）', true],
+  ['B9', '我擔心這份回饋會被用來評比或排名個人'],
+  ['B10', '我覺得這份回饋能幫助我做出下一次課堂／討論的調整'],
+  ['B11', '整體而言，我願意在未來的實驗週持續收到並使用這種回饋']
+];
+const E_Q = [
+  ['E1', '看完圖後，我更清楚下一次課堂／討論可以做哪些調整'],
+  ['E2', '這份回饋提升了我對「活動節奏／轉場」的覺察'],
+  ['E3', '這份回饋有助於改善分組討論中的參與均衡'],
+  ['E4', '這份回饋有助於建立更清楚的責任／角色分工'],
+  ['E5', '這份回饋有助於促進和他人（同組／助教／教師／諮詢員）針對互動品質的對話'],
+  ['E6', '我因為這份回饋感到焦慮或壓力增加（反向題）'],
+  ['E7', '我覺得這份回饋是低干擾的，不會讓我在課堂中感到被監控或改變自然參與行為']
+];
+const F1_Q = [
+  ['F1_legend', '圖例與狀態區分（顏色／標示）'],
+  ['F1_segment', '活動段落標註（例如啟動、發散、整合、產出、回收）'],
+  ['F1_keytime', '關鍵時間點（2-3 個高峰／低谷時間點）'],
+  ['F1_readhint', '讀圖提示（如何判讀低谷／轉場、如何連結到教學行動）'],
+  ['F1_grouporder', '分組排序／標示方式（固定順序、依投入排序、可選擇特定組）'],
+  ['F1_summary', '摘要指標（例如低谷段落長度、組間差異；若本週未提供可跳過）']
+];
+
+function scaleHTML(name, minLabel, maxLabel) {
+  return `<div class="scale-row">
+    <span class="scale-min">${minLabel}</span>
+    <div class="scale-options">
+      ${[1,2,3,4,5].map(v => `<label><input type="radio" name="${name}" value="${v}">${v}</label>`).join('')}
+    </div>
+    <span class="scale-max">${maxLabel}</span>
+  </div>`;
+}
+function renderScaleGroup(containerId, items, minL, maxL, wrapInQ = true) {
+  const html = items.map(([id, text, required]) => {
+    const req = required ? ' required' : '';
+    const reqSpan = required ? '<span class="req">*</span>' : '';
+    const attr = required ? ' data-required="radio"' : '';
+    if (wrapInQ) {
+      return `<div class="q${req}" data-id="${id}"${attr}>
+        <div class="q-title">${id}. ${text}${reqSpan}</div>
+        ${scaleHTML(id, minL, maxL)}
+      </div>`;
+    } else {
+      return `<div class="sub-label">${text}</div>${scaleHTML(id, minL, maxL)}`;
+    }
+  }).join('');
+  document.getElementById(containerId).innerHTML = html;
+}
+renderScaleGroup('sec-B-items', B_Q, '非常不同意', '非常同意');
+renderScaleGroup('sec-E-items', E_Q, '非常不同意', '非常同意');
+renderScaleGroup('sec-F1-items', F1_Q, '幫助很小', '幫助很大', false);
+
+if (urlCode) {
+  const a1 = document.querySelector('[data-field="A1"]');
+  if (a1) a1.value = urlCode;
+}
 
 // ── Canvas overlay ───────────────────────────────────────────
 const canvas = document.getElementById('overlay');
 const ctx    = canvas.getContext('2d');
 const wrap   = document.getElementById('chart-wrap');
 
-// 每個時間段有 start 和 end，預設三段平均分布
-let segments = [
-  [0.12, 0.28],
-  [0.40, 0.56],
-  [0.68, 0.84]
-];
-// dragging: { seg: i, handle: 'start'|'end'|'move', anchorR, anchorX }
+let segments = [[0.12, 0.28], [0.40, 0.56], [0.68, 0.84]];
 let dragging = null;
+const SEGMENT_ALPHA = 0.25;
 
-const SEGMENT_ALPHA = 0.25; // 區塊透明度
-
-function ratioToMinutes(r) {
-  return Math.round(r * TIME_MAX);
-}
-
+function ratioToMinutes(r) { return Math.round(r * TIME_MAX); }
 function xToRatio(clientX) {
   const rect = wrap.getBoundingClientRect();
   const chartLeft  = rect.width * CHART_LEFT_RATIO;
   const chartRight = rect.width * CHART_RIGHT_RATIO;
-  return Math.max(0, Math.min(1,
-    (clientX - rect.left - chartLeft) / (chartRight - chartLeft)
-  ));
+  return Math.max(0, Math.min(1, (clientX - rect.left - chartLeft) / (chartRight - chartLeft)));
 }
-
-function ratioToX(r) {
-  const rect = wrap.getBoundingClientRect();
-  const chartLeft  = rect.width * CHART_LEFT_RATIO;
-  const chartRight = rect.width * CHART_RIGHT_RATIO;
-  return chartLeft + r * (chartRight - chartLeft);
-}
-
-// 找最近的控制點（start 或 end 邊緣）或整段拖曳
 function findHandle(clientX) {
   const rect = wrap.getBoundingClientRect();
   const relX = clientX - rect.left;
   const chartLeft  = rect.width * CHART_LEFT_RATIO;
   const chartRight = rect.width * CHART_RIGHT_RATIO;
   const threshold  = 14;
-
   let best = null, bestDist = Infinity;
   segments.forEach(([s, e], i) => {
     const sx = chartLeft + s * (chartRight - chartLeft);
@@ -325,7 +796,6 @@ function findHandle(clientX) {
     const de = Math.abs(relX - ex);
     if (ds < threshold && ds < bestDist) { best = { seg: i, handle: 'start' }; bestDist = ds; }
     if (de < threshold && de < bestDist) { best = { seg: i, handle: 'end'   }; bestDist = de; }
-    // 整段拖曳（在區塊內部）
     if (relX > sx + threshold && relX < ex - threshold && bestDist > threshold) {
       const dm = Math.min(ds, de) + 1;
       if (dm < bestDist) { best = { seg: i, handle: 'move', anchorR: xToRatio(clientX), anchorS: s, anchorE: e }; bestDist = dm; }
@@ -333,41 +803,29 @@ function findHandle(clientX) {
   });
   return best;
 }
-
 function redraw() {
   const img = document.getElementById('img-group');
   canvas.width  = img.offsetWidth;
   canvas.height = img.offsetHeight;
-
   const chartLeft  = canvas.width * CHART_LEFT_RATIO;
   const chartRight = canvas.width * CHART_RIGHT_RATIO;
   const top    = canvas.height * 0.06;
   const bottom = canvas.height * 0.82;
-
   segments.forEach(([s, e], i) => {
     const x1 = chartLeft + s * (chartRight - chartLeft);
     const x2 = chartLeft + e * (chartRight - chartLeft);
     const w  = x2 - x1;
     const color = LINE_COLORS[i];
-
     ctx.save();
-
-    // 半透明填色區塊
     ctx.globalAlpha = SEGMENT_ALPHA;
-    ctx.fillStyle   = color;
+    ctx.fillStyle = color;
     ctx.fillRect(x1, top, w, bottom - top);
     ctx.globalAlpha = 1;
-
-    // 左邊界線
     ctx.strokeStyle = color;
-    ctx.lineWidth   = 2.5;
+    ctx.lineWidth = 2.5;
     ctx.setLineDash([6, 3]);
     ctx.beginPath(); ctx.moveTo(x1, top); ctx.lineTo(x1, bottom); ctx.stroke();
-
-    // 右邊界線
     ctx.beginPath(); ctx.moveTo(x2, top); ctx.lineTo(x2, bottom); ctx.stroke();
-
-    // 標籤泡泡（置中）
     const midX = (x1 + x2) / 2;
     ctx.setLineDash([]);
     ctx.fillStyle = color;
@@ -376,13 +834,10 @@ function redraw() {
     ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(LINE_LABELS[i], midX, top - 6);
-
     ctx.restore();
   });
-
   updateDisplay();
 }
-
 function updateDisplay() {
   segments.forEach(([s, e], i) => {
     const sm = ratioToMinutes(s);
@@ -390,31 +845,25 @@ function updateDisplay() {
     const pct = e - s;
     document.getElementById(`tv${i+1}`).textContent = `${sm} ~ ${em} min`;
     document.getElementById(`bar${i+1}`).style.marginLeft = `${s * 100}%`;
-    document.getElementById(`bar${i+1}`).style.width      = `${pct * 100}%`;
+    document.getElementById(`bar${i+1}`).style.width = `${pct * 100}%`;
+    const c2 = document.getElementById(`c2-t${i+1}-time`);
+    if (c2) c2.textContent = `${sm} ~ ${em} min`;
   });
 }
-
-function getClientX(e, touch) {
-  return touch ? e.touches[0].clientX : e.clientX;
-}
-
+function getClientX(e, touch) { return touch ? e.touches[0].clientX : e.clientX; }
 function onDown(e, touch = false) {
   const cx = getClientX(e, touch);
   dragging = findHandle(cx);
   if (dragging && touch) e.preventDefault();
 }
-
 function onMove(e, touch = false) {
   if (!dragging) return;
   if (touch) e.preventDefault();
   const r = xToRatio(getClientX(e, touch));
   const { seg, handle } = dragging;
-
-  if (handle === 'start') {
-    segments[seg][0] = Math.min(r, segments[seg][1] - 0.01);
-  } else if (handle === 'end') {
-    segments[seg][1] = Math.max(r, segments[seg][0] + 0.01);
-  } else if (handle === 'move') {
+  if (handle === 'start')      segments[seg][0] = Math.min(r, segments[seg][1] - 0.01);
+  else if (handle === 'end')   segments[seg][1] = Math.max(r, segments[seg][0] + 0.01);
+  else if (handle === 'move') {
     const dr = r - dragging.anchorR;
     const w  = dragging.anchorE - dragging.anchorS;
     let ns = dragging.anchorS + dr;
@@ -424,33 +873,160 @@ function onMove(e, touch = false) {
     segments[seg] = [ns, ne];
   }
   redraw();
+  scheduleAutosave();
 }
-
 function onUp() { dragging = null; }
 
 window.addEventListener('resize', redraw);
 document.getElementById('img-group').addEventListener('load', redraw);
 setTimeout(redraw, 300);
 
-// ── Save ─────────────────────────────────────────────────────
+// ── 身分切換 / D0 分支 ───────────────────────────────────────
+function onRoleChange() {
+  const role = document.querySelector('input[name="A2"]:checked')?.value;
+  const teacher = document.getElementById('d-teacher-block');
+  const student = document.getElementById('d-student-block');
+  const prompt  = document.getElementById('role-prompt');
+  teacher.classList.toggle('active', role === '授課教師');
+  student.classList.toggle('active', role === '學生');
+  prompt.style.display = role ? 'none' : 'block';
+  scheduleAutosave();
+}
+function onD0Change() {
+  const d0 = document.querySelector('input[name="D0"]:checked')?.value;
+  document.getElementById('D0_1-block').style.display = (d0 === '不會' || d0 === '還不確定') ? 'block' : 'none';
+  scheduleAutosave();
+}
+
+// ── Autosave (localStorage) ──────────────────────────────────
+let saveTimer = null;
+function scheduleAutosave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(autosave, 500);
+}
+function draftKey() { return `nu_eng_v2_${currentDate()}_${currentGroup()}`; }
+function autosave() {
+  const data = { answers: collectAnswers(), segments, savedAt: new Date().toISOString() };
+  try {
+    localStorage.setItem(draftKey(), JSON.stringify(data));
+    document.getElementById('autosave-hint').textContent = '草稿已自動儲存 ' + new Date().toLocaleTimeString();
+  } catch (e) {}
+}
+function loadDraft() {
+  clearForm();
+  try {
+    const raw = localStorage.getItem(draftKey());
+    if (!raw) {
+      document.getElementById('autosave-hint').textContent = '尚未儲存';
+      return;
+    }
+    const data = JSON.parse(raw);
+    if (data.segments && Array.isArray(data.segments)) segments = data.segments;
+    applyAnswers(data.answers || {});
+    redraw();
+    onRoleChange();
+    onD0Change();
+    document.getElementById('autosave-hint').textContent = '已載入草稿（' + new Date(data.savedAt).toLocaleString() + '）';
+  } catch (e) { console.error('載入草稿失敗', e); }
+}
+function clearForm() {
+  document.querySelectorAll('input[type=text], textarea').forEach(el => el.value = '');
+  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => el.checked = false);
+  onRoleChange();
+  onD0Change();
+}
+
+// ── 收集／套用填答 ───────────────────────────────────────────
+function collectAnswers() {
+  const ans = {};
+  document.querySelectorAll('[data-field]').forEach(el => {
+    const v = el.value.trim();
+    if (v !== '') ans[el.dataset.field] = v;
+  });
+  const radios = {};
+  document.querySelectorAll('input[type=radio]').forEach(el => {
+    if (el.checked) radios[el.name] = el.value;
+  });
+  Object.assign(ans, radios);
+  const cbGroups = {};
+  document.querySelectorAll('input[type=checkbox]').forEach(el => {
+    if (!el.checked) return;
+    if (!cbGroups[el.name]) cbGroups[el.name] = [];
+    cbGroups[el.name].push(el.value);
+  });
+  Object.keys(cbGroups).forEach(k => ans[k] = cbGroups[k]);
+  return ans;
+}
+function applyAnswers(ans) {
+  if (!ans) return;
+  Object.keys(ans).forEach(k => {
+    const val = ans[k];
+    const txt = document.querySelector(`[data-field="${k}"]`);
+    if (txt) { txt.value = val || ''; return; }
+    const radios = document.getElementsByName(k);
+    if (radios.length && radios[0].type === 'radio') {
+      [...radios].forEach(r => { if (r.value === val) r.checked = true; });
+      return;
+    }
+    if (Array.isArray(val) && radios.length && radios[0].type === 'checkbox') {
+      [...radios].forEach(cb => { if (val.indexOf(cb.value) >= 0) cb.checked = true; });
+    }
+  });
+}
+
+document.addEventListener('input',  scheduleAutosave);
+document.addEventListener('change', scheduleAutosave);
+
+// ── 必填驗證 ─────────────────────────────────────────────────
+function validate() {
+  const missing = [];
+  document.querySelectorAll('[data-required]').forEach(q => {
+    const block = q.closest('.role-block');
+    if (block && !block.classList.contains('active')) return;
+    if (q.offsetParent === null) return;
+    const id = q.dataset.id;
+    const type = q.dataset.required;
+    let filled = false;
+    if (type === 'radio' || type === 'checkbox') {
+      filled = q.querySelector(`input[type=${type}]:checked`) !== null;
+    } else {
+      filled = [...q.querySelectorAll('input[type=text], textarea')].some(el => el.value.trim() !== '');
+    }
+    if (!filled) { missing.push(id); q.classList.add('missing'); }
+    else q.classList.remove('missing');
+  });
+  return missing;
+}
+
+// ── Save & Submit ────────────────────────────────────────────
 async function handleSave() {
   const btn    = document.getElementById('save-btn');
   const status = document.getElementById('status');
+
+  const missing = validate();
+  if (missing.length > 0) {
+    status.className = 'err';
+    status.textContent = `請完成必填題：${missing.join('、')}`;
+    const first = document.querySelector(`.q[data-id="${missing[0]}"]`);
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
   btn.disabled = true;
   status.className = '';
   status.textContent = '截圖中，請稍候…';
 
   try {
-    const c = await html2canvas(document.getElementById('page-wrapper'), {
-      useCORS: true, scale: 1.5
-    });
+    const c = await html2canvas(document.getElementById('layout'), { useCORS: true, scale: 1.2 });
     const screenshot = c.toDataURL('image/png').split(',')[1];
 
+    const answers = collectAnswers();
     const payload = {
-      date: currentDate(), group: currentGroup(),
-      timepoints: segments.map(([s, e]) => ({
-        start: ratioToMinutes(s), end: ratioToMinutes(e)
-      })),
+      date: currentDate(),
+      group: currentGroup(),
+      role: answers.A2 || '',
+      segments: segments.map(([s, e]) => ({ start: ratioToMinutes(s), end: ratioToMinutes(e) })),
+      answers,
       screenshot,
       timestamp: new Date().toISOString()
     };
@@ -461,16 +1037,20 @@ async function handleSave() {
 
     if (text === 'OK') {
       status.className = 'ok';
-      status.textContent = '儲存成功！';
+      status.textContent = '儲存成功！感謝您的填答。';
+      localStorage.removeItem(draftKey());
     } else {
       throw new Error(text);
     }
   } catch (err) {
     status.className = 'err';
     status.textContent = `儲存失敗：${err.message}`;
+  } finally {
     btn.disabled = false;
   }
 }
+
+loadDraft();
 </script>
 </body>
 </html>
