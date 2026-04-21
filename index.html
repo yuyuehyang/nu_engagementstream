@@ -756,8 +756,8 @@ function renderScaleGroup(containerId, items, minL, maxL, wrapInQ = true) {
   }).join('');
   document.getElementById(containerId).innerHTML = html;
 }
-renderScaleGroup('sec-B-items', B_Q, '非常不同意', '非常同意');
-renderScaleGroup('sec-E-items', E_Q, '非常不同意', '非常同意');
+renderScaleGroup('sec-B-items', B_Q, '非常不同意／非常不符合', '非常同意／非常符合');
+renderScaleGroup('sec-E-items', E_Q, '非常不同意／非常不符合', '非常同意／非常符合');
 renderScaleGroup('sec-F1-items', F1_Q, '幫助很小', '幫助很大', false);
 
 if (urlCode) {
