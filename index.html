@@ -67,7 +67,7 @@ body { font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif; backgro
 .tp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .tp-label { width: 40px; font-size: 12px; flex-shrink: 0; font-weight: bold; text-align: center; }
 .tp-bar-wrap { flex: 1; height: 20px; background: #e8e8e8; border-radius: 4px; overflow: hidden; position: relative; }
-.tp-bar { height: 100%; border-radius: 4px; transition: width 0.15s; }
+.tp-bar { height: 100%; border-radius: 4px; }
 #bar1 { background: #e65100; }
 #bar2 { background: #1565c0; }
 #bar3 { background: #b71c1c; }
@@ -651,7 +651,7 @@ textarea { resize: vertical; min-height: 50px; }
 
 <script>
 // ── Config ───────────────────────────────────────────────────
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSiMxrcqZKuGNmEd1lVlq3OVlYNzuRzxrkWNc9SpFmhlOhbRaMVZcLxbAomSP6BKZKTg/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaBg66fR5BHjcstAkxVBbFd0fajR5eaxYw1ujlpNjch9H-mVl6_3Qu6HH3i0sxQ79f/exec';
 const IMG_BASE  = 'images/';
 const TIME_MAX  = 125;
 const CHART_LEFT_RATIO  = 0.055;
@@ -1017,8 +1017,25 @@ async function handleSave() {
   status.textContent = '截圖中，請稍候…';
 
   try {
-    const c = await html2canvas(document.getElementById('layout'), { useCORS: true, scale: 1.2 });
-    const screenshot = c.toDataURL('image/png').split(',')[1];
+    // 左欄有內部捲動，先暫時解除 max-height 才能截到完整內容
+    const leftCol = document.getElementById('left-col');
+    const origMaxH   = leftCol.style.maxHeight;
+    const origOvf    = leftCol.style.overflowY;
+    const origPos    = leftCol.style.position;
+    leftCol.style.maxHeight = 'none';
+    leftCol.style.overflowY = 'visible';
+    leftCol.style.position  = 'static';
+
+    const leftCanvas  = await html2canvas(leftCol, { useCORS: true, scale: 1.2 });
+    // 還原樣式
+    leftCol.style.maxHeight = origMaxH;
+    leftCol.style.overflowY = origOvf;
+    leftCol.style.position  = origPos;
+
+    const rightCanvas = await html2canvas(document.getElementById('right-col'), { useCORS: true, scale: 1.2 });
+
+    const screenshot_left  = leftCanvas.toDataURL('image/png').split(',')[1];
+    const screenshot_right = rightCanvas.toDataURL('image/png').split(',')[1];
 
     const answers = collectAnswers();
     const payload = {
@@ -1027,7 +1044,8 @@ async function handleSave() {
       role: answers.A2 || '',
       segments: segments.map(([s, e]) => ({ start: ratioToMinutes(s), end: ratioToMinutes(e) })),
       answers,
-      screenshot,
+      screenshot_left,
+      screenshot_right,
       timestamp: new Date().toISOString()
     };
 

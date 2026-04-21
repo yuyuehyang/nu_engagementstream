@@ -37,7 +37,7 @@ const HEADERS = [
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const { date, group, role, segments, answers, screenshot, timestamp } = data;
+    const { date, group, role, segments, answers, screenshot, screenshot_left, screenshot_right, timestamp } = data;
     const a = answers || {};
     const s = segments || [{}, {}, {}];
 
@@ -81,12 +81,22 @@ function doPost(e) {
     ];
     sheet.appendRow(row);
 
-    // 儲存截圖到 Drive
+    // 儲存截圖到 Drive（左右兩張分開存；保留舊 screenshot 欄位向後相容）
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const safeRole = (role || 'x').replace(/[^\w]/g, '');
+    const stamp = timestamp.replace(/[:.]/g, '-');
+    const baseName = `${date}_${group}_${safeRole}_${stamp}`;
+
+    if (screenshot_left) {
+      const blob = Utilities.newBlob(Utilities.base64Decode(screenshot_left), 'image/png', `${baseName}_left.png`);
+      folder.createFile(blob);
+    }
+    if (screenshot_right) {
+      const blob = Utilities.newBlob(Utilities.base64Decode(screenshot_right), 'image/png', `${baseName}_right.png`);
+      folder.createFile(blob);
+    }
     if (screenshot) {
-      const folder = DriveApp.getFolderById(FOLDER_ID);
-      const safeRole = (role || 'x').replace(/[^\w]/g, '');
-      const filename = `${date}_${group}_${safeRole}_${timestamp.replace(/[:.]/g, '-')}.png`;
-      const blob = Utilities.newBlob(Utilities.base64Decode(screenshot), 'image/png', filename);
+      const blob = Utilities.newBlob(Utilities.base64Decode(screenshot), 'image/png', `${baseName}.png`);
       folder.createFile(blob);
     }
 
@@ -98,4 +108,29 @@ function doPost(e) {
 
 function doGet(e) {
   return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+}
+
+// ── 工具：重設表頭（在 Apps Script 編輯器手動執行一次即可）──
+// 用法：選擇函式「resetHeaders」→ 按「執行」。
+// 會把第 1 列換成最新的 HEADERS，不會動到其他列的資料。
+function resetHeaders() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  // 清除第 1 列舊內容
+  sheet.getRange(1, 1, 1, sheet.getMaxColumns()).clearContent();
+  // 寫入新表頭
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  // 凍結第 1 列、粗體
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+  SpreadsheetApp.flush();
+  Logger.log('已寫入 ' + HEADERS.length + ' 個欄位');
+}
+
+// ── 工具：清除全部資料（保留表頭）──
+// 小心使用！會刪掉所有回應
+function clearAllResponses() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, sheet.getMaxColumns()).clearContent();
+  Logger.log('已清除 ' + (lastRow - 1) + ' 列');
 }
