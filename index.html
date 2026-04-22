@@ -148,10 +148,16 @@ input[type="text"]:focus, textarea:focus, select:focus { outline: none; border-c
 textarea { resize: vertical; min-height: 50px; }
 
 .tp-subq {
-  padding: 10px; margin-bottom: 10px;
+  padding: 14px 16px; margin-bottom: 14px;
   background: #fff; border-radius: 4px;
   border: 1px solid #ddd;
 }
+.tp-subq .opts + .sub-label {
+  border-top: 1px dashed rgba(0, 0, 0, 0.28);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.tp-subq textarea { margin-bottom: 4px; }
 .tp-subq-head { font-size: 13px; margin-bottom: 8px; }
 .tp-tag {
   display: inline-block;
