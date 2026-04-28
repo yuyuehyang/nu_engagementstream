@@ -211,9 +211,35 @@ textarea { resize: vertical; min-height: 50px; }
 #status.warn { color: #ef6c00; background: #fff3e0; }
 
 .autosave-hint { font-size: 11px; color: #999; text-align: right; margin: 4px 0 -4px; }
+
+/* 圖片放大 modal */
+#img-modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 9999;
+  cursor: zoom-out; padding: 24px;
+  align-items: center; justify-content: center;
+}
+#img-modal.active { display: flex; }
+#img-modal img {
+  max-width: 95vw; max-height: 92vh;
+  border-radius: 8px; box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+}
+#img-modal-close {
+  position: absolute; top: 16px; right: 24px;
+  background: #fff; color: #333; border: none;
+  border-radius: 50%; width: 36px; height: 36px;
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.zoomable { cursor: zoom-in; transition: opacity 0.15s; }
+.zoomable:hover { opacity: 0.85; }
 </style>
 </head>
 <body>
+<div id="img-modal" onclick="closeImgModal()">
+  <button id="img-modal-close" onclick="closeImgModal()">×</button>
+  <img id="img-modal-content" src="" alt="">
+</div>
+
 <div id="layout">
 
 <!-- ============ LEFT COLUMN ============ -->
@@ -259,14 +285,22 @@ textarea { resize: vertical; min-height: 50px; }
     <li>為保護隱私，本問卷不要求填寫姓名、學號等可辨識個人身分資訊；請勿在開放題描述可直接辨識他人的資訊。</li>
     <li>若研究提供 200 元等值禮券作為參與回饋：請另填「聯絡資訊表」（與本問卷分開保存），以利後續發放。</li>
   </ul>
-  <h4>量表說明：除非另有說明，採 1–5 分量表。</h4>
-  <ul>
-    <li>1 = 非常不同意／非常不符合</li>
-    <li>2 = 不同意／不符合</li>
-    <li>3 = 普通／不確定</li>
-    <li>4 = 同意／符合</li>
-    <li>5 = 非常同意／非常符合</li>
-  </ul>
+  <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 220px;">
+      <h4>量表說明：除非另有說明，採 1–5 分量表。</h4>
+      <ul>
+        <li>1 = 非常不同意／非常不符合</li>
+        <li>2 = 不同意／不符合</li>
+        <li>3 = 普通／不確定</li>
+        <li>4 = 同意／符合</li>
+        <li>5 = 非常同意／非常符合</li>
+      </ul>
+    </div>
+    <figure style="margin: 0; flex: 0 0 auto;">
+      <img src="images/table.png" alt="桌號配置圖" class="zoomable" onclick="openImgModal('images/table.png')" style="width: 200px; height: auto; border: 1px solid #ccc; border-radius: 4px; display: block;">
+      <figcaption style="font-size: 11px; color: #666; text-align: center; margin-top: 4px;">桌號配置圖</figcaption>
+    </figure>
+  </div>
 </div>
 
 <div id="q-nav">
@@ -1103,6 +1137,21 @@ async function handleSave() {
 }
 
 loadDraft();
+
+// ── 圖片放大 modal ───────────────────────────────────────────
+function openImgModal(src) {
+  const modal = document.getElementById('img-modal');
+  document.getElementById('img-modal-content').src = src;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeImgModal() {
+  document.getElementById('img-modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeImgModal();
+});
 </script>
 </body>
 </html>
