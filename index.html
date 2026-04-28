@@ -1029,20 +1029,42 @@ async function handleSave() {
   status.textContent = '截圖中，請稍候…';
 
   try {
-    // 左欄有內部捲動，先暫時解除 max-height 才能截到完整內容
-    const leftCol = document.getElementById('left-col');
-    const origMaxH   = leftCol.style.maxHeight;
-    const origOvf    = leftCol.style.overflowY;
-    const origPos    = leftCol.style.position;
+    // 左欄與圖表視窗都有捲動限制，先暫時解除才能截到完整內容
+    const leftCol  = document.getElementById('left-col');
+    const viewport = document.querySelector('.chart-viewport');
+    const orig = {
+      lcMaxH: leftCol.style.maxHeight,
+      lcOvf:  leftCol.style.overflow,
+      lcOvfY: leftCol.style.overflowY,
+      lcPos:  leftCol.style.position,
+      vpHeight: viewport.style.height,
+      vpFlex:   viewport.style.flex,
+      vpMinH:   viewport.style.minHeight,
+      vpOvf:    viewport.style.overflow,
+    };
     leftCol.style.maxHeight = 'none';
+    leftCol.style.overflow  = 'visible';
     leftCol.style.overflowY = 'visible';
     leftCol.style.position  = 'static';
+    viewport.style.height    = 'auto';
+    viewport.style.flex      = 'none';
+    viewport.style.minHeight = '0';
+    viewport.style.overflow  = 'visible';
 
-    const leftCanvas  = await html2canvas(leftCol, { useCORS: true, scale: 1.2 });
+    // 等一輪 layout 讓尺寸更新
+    await new Promise(r => requestAnimationFrame(r));
+
+    const leftCanvas = await html2canvas(leftCol, { useCORS: true, scale: 1.2 });
+
     // 還原樣式
-    leftCol.style.maxHeight = origMaxH;
-    leftCol.style.overflowY = origOvf;
-    leftCol.style.position  = origPos;
+    leftCol.style.maxHeight = orig.lcMaxH;
+    leftCol.style.overflow  = orig.lcOvf;
+    leftCol.style.overflowY = orig.lcOvfY;
+    leftCol.style.position  = orig.lcPos;
+    viewport.style.height    = orig.vpHeight;
+    viewport.style.flex      = orig.vpFlex;
+    viewport.style.minHeight = orig.vpMinH;
+    viewport.style.overflow  = orig.vpOvf;
 
     const rightCanvas = await html2canvas(document.getElementById('right-col'), { useCORS: true, scale: 1.2 });
 
