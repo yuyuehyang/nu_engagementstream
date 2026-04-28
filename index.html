@@ -19,7 +19,8 @@ body { font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif; backgro
   flex: 0 0 46%;
   position: sticky; top: 16px;
   max-height: calc(100vh - 32px);
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex; flex-direction: column;
   background: #fff; border-radius: 8px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -37,38 +38,34 @@ body { font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif; backgro
 
 #header {
   display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; flex-wrap: wrap;
   margin-bottom: 12px; padding-bottom: 10px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
 }
-#header h2 { font-size: 16px; color: #222; }
-#info-bar { display: flex; gap: 12px; font-size: 13px; color: #666; }
-#info-bar span strong { color: #333; }
-
-#group-bar {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 10px; flex-wrap: wrap;
-}
-#group-bar label { font-size: 13px; color: #555; }
-#group-bar select {
-  padding: 5px 10px; font-size: 13px;
+#header h2 { font-size: 22px; color: #222; font-weight: bold; }
+#header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; white-space: nowrap; }
+#header-controls label { font-size: 14px; color: #555; }
+#header-controls select {
+  padding: 6px 12px; font-size: 14px;
   border: 1px solid #bbb; border-radius: 4px;
-  background: #fff; cursor: pointer;
+  background: #fff; cursor: pointer; min-width: 90px;
 }
 
 .chart-viewport {
   width: 100%;
-  height: 600px;
+  flex: 1;
+  min-height: 300px;
   overflow: auto;
   border: 1px solid #ddd;
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   background: #fafafa;
 }
 .chart-wrap {
   position: relative; display: inline-block;
   cursor: ew-resize; user-select: none;
 }
-.chart-wrap img { display: block; max-width: none; }
+.chart-wrap img { display: block; width: 1900px; height: auto; max-width: none; }
 #overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
 
 #timepoints-section { margin-bottom: 10px; }
@@ -223,18 +220,15 @@ textarea { resize: vertical; min-height: 50px; }
 <div id="left-col">
   <div id="header">
     <h2>群體投入狀態圖</h2>
-    <div id="info-bar">
-      <span>日期：<strong id="lbl-date">—</strong></span>
-      <span>桌號：<strong id="lbl-group">—</strong></span>
+    <div id="header-controls">
+      <label>日期</label>
+      <select id="date-select" onchange="onDateChange()"></select>
+      <label>桌號</label>
+      <select id="group-select" onchange="onGroupChange()"></select>
     </div>
   </div>
-
-  <div id="group-bar">
-    <label>日期：</label>
-    <select id="date-select" onchange="onDateChange()"></select>
-    <label>桌號：</label>
-    <select id="group-select" onchange="onGroupChange()"></select>
-  </div>
+  <span id="lbl-date" style="display:none"></span>
+  <span id="lbl-group" style="display:none"></span>
 
   <p class="hint">在圖上拖曳三段 T1（橘）／T2（藍）／T3（紅）標記時間點；視窗可上下左右捲動</p>
   <div class="chart-viewport">
@@ -829,8 +823,8 @@ function redraw() {
   canvas.height = img.offsetHeight;
   const chartLeft  = canvas.width * CHART_LEFT_RATIO;
   const chartRight = canvas.width * CHART_RIGHT_RATIO;
-  const top    = canvas.height * 0.04;
-  const bottom = canvas.height * 0.98;
+  const top    = 0;
+  const bottom = canvas.height;
   segments.forEach(([s, e], i) => {
     const x1 = chartLeft + s * (chartRight - chartLeft);
     const x2 = chartLeft + e * (chartRight - chartLeft);
@@ -848,12 +842,14 @@ function redraw() {
     ctx.beginPath(); ctx.moveTo(x2, top); ctx.lineTo(x2, bottom); ctx.stroke();
     const midX = (x1 + x2) / 2;
     ctx.setLineDash([]);
+    // 標籤畫在線的最頂端（覆蓋虛線）
     ctx.fillStyle = color;
-    ctx.fillRect(midX - 16, top - 20, 32, 18);
+    ctx.fillRect(midX - 16, 2, 32, 18);
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(LINE_LABELS[i], midX, top - 6);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(LINE_LABELS[i], midX, 11);
     ctx.restore();
   });
   updateDisplay();
