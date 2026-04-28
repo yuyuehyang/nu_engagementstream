@@ -217,14 +217,14 @@ textarea { resize: vertical; min-height: 50px; }
     <h2>群體投入狀態圖</h2>
     <div id="info-bar">
       <span>日期：<strong id="lbl-date">—</strong></span>
-      <span>組別：<strong id="lbl-group">—</strong></span>
+      <span>桌號：<strong id="lbl-group">—</strong></span>
     </div>
   </div>
 
   <div id="group-bar">
     <label>日期：</label>
     <select id="date-select" onchange="onDateChange()"></select>
-    <label>組別：</label>
+    <label>桌號：</label>
     <select id="group-select" onchange="onGroupChange()"></select>
   </div>
 
@@ -237,30 +237,10 @@ textarea { resize: vertical; min-height: 50px; }
     ontouchstart="onDown(event,true)"
     ontouchmove="onMove(event,true)"
     ontouchend="onUp()">
-    <img id="img-group" src="" alt="組別圖" onload="redraw()">
+    <img id="img-group" src="" alt="圖表" onload="redraw()">
     <canvas id="overlay"></canvas>
   </div>
 
-  <div id="timepoints-section">
-    <div class="tp-row">
-      <span class="tp-label" style="color:#e65100">T1</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar1"></div></div>
-      <span class="tp-time" id="tv1">— ~ — min</span>
-    </div>
-    <div class="tp-row">
-      <span class="tp-label" style="color:#1565c0">T2</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar2"></div></div>
-      <span class="tp-time" id="tv2">— ~ — min</span>
-    </div>
-    <div class="tp-row">
-      <span class="tp-label" style="color:#b71c1c">T3</span>
-      <div class="tp-bar-wrap"><div class="tp-bar" id="bar3"></div></div>
-      <span class="tp-time" id="tv3">— ~ — min</span>
-    </div>
-  </div>
-
-  <div class="hint" style="margin-top:10px">全組比較圖</div>
-  <img id="img-summary" src="" alt="全組比較圖">
 </div>
 
 <!-- ============ RIGHT COLUMN ============ -->
@@ -390,7 +370,7 @@ textarea { resize: vertical; min-height: 50px; }
     <div class="opts">
       <label><input type="checkbox" name="C1" value="全班在某些段落出現明顯的投入低谷">全班在某些段落出現明顯的投入低谷</label>
       <label><input type="checkbox" name="C1" value="全班在某些段落出現明顯的投入高峰">全班在某些段落出現明顯的投入高峰</label>
-      <label><input type="checkbox" name="C1" value="不同組別之間差異很大">不同組別之間差異很大（某些組特別低或特別高）</label>
+      <label><input type="checkbox" name="C1" value="不同桌號之間差異很大">不同桌號之間差異很大（某些桌特別低或特別高）</label>
       <label><input type="checkbox" name="C1" value="在活動轉場時出現投入下滑">在活動轉場時出現投入下滑（例如從講解切到討論／從討論回收到全班）</label>
       <label><input type="checkbox" name="C1" value="某些段落投入很平均、穩定">某些段落投入很平均、穩定</label>
       <label><input type="checkbox" name="C1" value="我看不太出明顯差異">我看不太出明顯差異／我不確定如何解讀</label>
@@ -705,18 +685,21 @@ dateSel.value = allDates.includes(urlDate) ? urlDate : allDates[0];
 function currentDate()  { return dateSel.value; }
 function currentGroup() { return groupSel.value; }
 
+function groupLabel(g) {
+  if (g === 'all') return '全部';
+  return '桌' + g.replace(/^group/i, '');  // group3 → 桌3
+}
 function updateGroupOptions() {
   const groups = DATE_GROUPS[currentDate()] || ['all'];
-  groupSel.innerHTML = groups.map(g => `<option value="${g}">${g.toUpperCase()}</option>`).join('');
+  groupSel.innerHTML = groups.map(g => `<option value="${g}">${groupLabel(g)}</option>`).join('');
   groupSel.value = groups.includes(urlGroup) ? urlGroup : groups[0];
 }
 function updateHeader() {
   document.getElementById('lbl-date').textContent  = currentDate();
-  document.getElementById('lbl-group').textContent = currentGroup().toUpperCase();
+  document.getElementById('lbl-group').textContent = groupLabel(currentGroup());
 }
 function loadImages() {
   document.getElementById('img-group').src   = `${IMG_BASE}${currentDate()}_${currentGroup()}.png`;
-  document.getElementById('img-summary').src = `${IMG_BASE}${currentDate()}_summary_comparison.png`;
 }
 function onDateChange() { updateGroupOptions(); updateHeader(); loadImages(); loadDraft(); }
 function onGroupChange() { updateHeader(); loadImages(); loadDraft(); }
@@ -869,10 +852,6 @@ function updateDisplay() {
   segments.forEach(([s, e], i) => {
     const sm = ratioToMinutes(s);
     const em = ratioToMinutes(e);
-    const pct = e - s;
-    document.getElementById(`tv${i+1}`).textContent = `${sm} ~ ${em} min`;
-    document.getElementById(`bar${i+1}`).style.marginLeft = `${s * 100}%`;
-    document.getElementById(`bar${i+1}`).style.width = `${pct * 100}%`;
     const c2 = document.getElementById(`c2-t${i+1}-time`);
     if (c2) c2.textContent = `${sm} ~ ${em} min`;
   });
