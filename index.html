@@ -55,13 +55,21 @@ body { font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif; backgro
   background: #fff; cursor: pointer;
 }
 
+.chart-viewport {
+  width: 100%;
+  height: 600px;
+  overflow: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
 .chart-wrap {
-  position: relative; display: block;
-  width: 100%; margin-bottom: 10px;
+  position: relative; display: inline-block;
   cursor: ew-resize; user-select: none;
 }
-.chart-wrap img { width: 100%; display: block; border: 1px solid #ddd; border-radius: 4px; }
-#overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.chart-wrap img { display: block; max-width: none; }
+#overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
 
 #timepoints-section { margin-bottom: 10px; }
 .tp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -228,17 +236,19 @@ textarea { resize: vertical; min-height: 50px; }
     <select id="group-select" onchange="onGroupChange()"></select>
   </div>
 
-  <p class="hint">拖曳三段 T1（橘）／T2（藍）／T3（紅）標記時間點；C2 題組會自動帶入分鐘數</p>
-  <div class="chart-wrap" id="chart-wrap"
-    onmousedown="onDown(event)"
-    onmousemove="onMove(event)"
-    onmouseup="onUp()"
-    onmouseleave="onUp()"
-    ontouchstart="onDown(event,true)"
-    ontouchmove="onMove(event,true)"
-    ontouchend="onUp()">
-    <img id="img-group" src="" alt="圖表" onload="redraw()">
-    <canvas id="overlay"></canvas>
+  <p class="hint">在圖上拖曳三段 T1（橘）／T2（藍）／T3（紅）標記時間點；視窗可上下左右捲動</p>
+  <div class="chart-viewport">
+    <div class="chart-wrap" id="chart-wrap"
+      onmousedown="onDown(event)"
+      onmousemove="onMove(event)"
+      onmouseup="onUp()"
+      onmouseleave="onUp()"
+      ontouchstart="onDown(event,true)"
+      ontouchmove="onMove(event,true)"
+      ontouchend="onUp()">
+      <img id="img-group" src="" alt="圖表" onload="redraw()">
+      <canvas id="overlay"></canvas>
+    </div>
   </div>
 
 </div>
@@ -699,7 +709,7 @@ function updateHeader() {
   document.getElementById('lbl-group').textContent = groupLabel(currentGroup());
 }
 function loadImages() {
-  document.getElementById('img-group').src   = `${IMG_BASE}${currentDate()}_${currentGroup()}.png`;
+  document.getElementById('img-group').src = `${IMG_BASE}1132.png`;
 }
 function onDateChange() { updateGroupOptions(); updateHeader(); loadImages(); loadDraft(); }
 function onGroupChange() { updateHeader(); loadImages(); loadDraft(); }
@@ -819,8 +829,8 @@ function redraw() {
   canvas.height = img.offsetHeight;
   const chartLeft  = canvas.width * CHART_LEFT_RATIO;
   const chartRight = canvas.width * CHART_RIGHT_RATIO;
-  const top    = canvas.height * 0.06;
-  const bottom = canvas.height * 0.82;
+  const top    = canvas.height * 0.04;
+  const bottom = canvas.height * 0.98;
   segments.forEach(([s, e], i) => {
     const x1 = chartLeft + s * (chartRight - chartLeft);
     const x2 = chartLeft + e * (chartRight - chartLeft);
